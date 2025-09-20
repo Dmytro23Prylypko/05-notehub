@@ -1,21 +1,19 @@
 import {
   keepPreviousData,
-  useMutation,
   useQuery,
-  useQueryClient,
 } from "@tanstack/react-query";
 import NoteList from "../NoteList/NoteList";
 import SearchBox from "../SearchBox/SearchBox";
 import css from "./App.module.css";
-import { createNote, deleteNote, fetchNotes } from "../../services/noteService";
+import {  fetchNotes } from "../../services/noteService";
 import Pagination from "../Pagination/Pagination";
 import { useState } from "react";
 import Modal from "../Modal/Modal";
-import type { Note } from "../../types/note";
 import { useDebounce } from "use-debounce";
 import Loader from "../Loader/Loader";
 import Error from "../Error/Error";
 import NotFound from "../NotFound/NotFound";
+import NoteForm from "../NoteForm/NoteForm";
 
 function App() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,44 +21,17 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue] = useDebounce(searchQuery, 500);
 
+  const queryKey = ["notes", currentPage, searchValue];
+
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", currentPage, searchValue],
+    queryKey: queryKey,
     queryFn: () => fetchNotes(currentPage, searchValue),
     placeholderData: keepPreviousData,
   });
 
   const onClose = () => setIsOpen(false);
 
-  const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: (newNote: Note) => createNote(newNote),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notes", currentPage, searchQuery],
-      });
-      setIsOpen(false);
-    },
-  });
-
-  const onSubmit = (newNote: Note) => {
-    createMutation.mutate(newNote);
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: (noteId: string) => deleteNote(noteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["notes", currentPage, searchQuery],
-      });
-    },
-  });
-
-  const handleDelete = (noteId: string) => {
-    deleteMutation.mutate(noteId);
-  };
-
-  const handleSearch = (text: string) => {
+  const onSearch = (text: string) => {
     setSearchQuery(text);
     setCurrentPage(1);
   };
@@ -68,21 +39,25 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <SearchBox handleSearch={handleSearch} />
-        <Pagination
+        <SearchBox onSearch={onSearch} />
+        {data && data?.totalPages < 1 && <Pagination
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           pageCount={data?.totalPages ?? 0}
-        />
+        />}
         <button className={css.button} onClick={() => setIsOpen(true)}>
           Create note +
         </button>
-        {isOpen && <Modal onClose={onClose} onSubmit={onSubmit} />}
+        {isOpen && (
+          <Modal onClose={onClose}>
+            <NoteForm onClose={onClose} queryKey={queryKey} />
+          </Modal>
+        )}
       </header>
       {isError && <Error />}
-      {data && data?.notes.length > 1 && !isLoading ? (
-        <NoteList notes={data?.notes} handleDelete={handleDelete} />
-      ) : (
+      {data && data?.notes.length > 0 ? (
+        <NoteList notes={data?.notes} queryKey={queryKey}/>
+      ) : data && (
         <NotFound />
       )}
       {isLoading && <Loader />}

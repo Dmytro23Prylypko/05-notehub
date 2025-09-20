@@ -1,8 +1,10 @@
+export type TagType = "Work" | "Personal" | "Meeting" | "Shopping" | "Todo";
+
 export interface Note {
-  id?: string;
+  id: string;
   title: string;
   content: string;
-  createdAt?: string;
-  updatedAt?: string;
-  tag: "Work" | "Personal" | "Meeting" | "Shopping" | "Todo";
+  createdAt: string;
+  updatedAt: string;
+  tag: TagType;
 }

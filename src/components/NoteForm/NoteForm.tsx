@@ -2,9 +2,17 @@ import css from "./NoteForm.module.css";
 import { Formik, Form, Field, ErrorMessage, type FormikHelpers } from "formik";
 import { useId } from "react";
 import * as Yup from "yup";
-import type { Note } from "../../types/note";
+import type { TagType } from "../../types/note";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createNote } from "../../services/noteService";
 
-const defaultValues: Note = {
+interface DefaultValues {
+  title: string;
+  content: string;
+  tag: TagType;
+}
+
+const defaultValues: DefaultValues = {
   title: "",
   content: "",
   tag: "Todo",
@@ -12,7 +20,7 @@ const defaultValues: Note = {
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().min(3).max(50).required("Title is required"),
-  constent: Yup.string().max(500),
+  content: Yup.string().max(500),
   tag: Yup.string()
     .oneOf(["Work", "Personal", "Meeting", "Shopping", "Todo"])
     .required("Tag is required"),
@@ -20,17 +28,29 @@ const validationSchema = Yup.object().shape({
 
 interface NoteFormProps {
   onClose: () => void;
-  onSubmit: (newNote: Note) => void;
+  queryKey: (string | number | undefined)[];
 }
 
-function NoteForm({onClose, onSubmit}: NoteFormProps) {
+function NoteForm({onClose, queryKey}: NoteFormProps) {
   const formId = useId();
 
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (payload: DefaultValues) => createNote(payload.title, payload.content, payload.tag),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKey,
+      });
+      onClose();
+    },
+  });
+
   const handleSubmit = (
-    values: Note,
-    actions: FormikHelpers<Note>
+    values: DefaultValues,
+    actions: FormikHelpers<DefaultValues>
   ) => {
-    onSubmit(values);
+    mutation.mutate(values);
     actions.resetForm();
   };
 
@@ -95,50 +115,3 @@ function NoteForm({onClose, onSubmit}: NoteFormProps) {
 }
 
 export default NoteForm;
-
-/* 
-<form className={css.form}>
-  <div className={css.formGroup}>
-    <label htmlFor="title">Title</label>
-    <input id="title" type="text" name="title" className={css.input} />
-    <span name="title" className={css.error} />
-  </div>
-
-  <div className={css.formGroup}>
-    <label htmlFor="content">Content</label>
-    <textarea
-      id="content"
-      name="content"
-      rows={8}
-      className={css.textarea}
-    />
-    <span name="content" className={css.error} />
-  </div>
-
-  <div className={css.formGroup}>
-    <label htmlFor="tag">Tag</label>
-    <select id="tag" name="tag" className={css.select}>
-      <option value="Todo">Todo</option>
-      <option value="Work">Work</option>
-      <option value="Personal">Personal</option>
-      <option value="Meeting">Meeting</option>
-      <option value="Shopping">Shopping</option>
-    </select>
-    <span name="tag" className={css.error} />
-  </div>
-
-  <div className={css.actions}>
-    <button type="button" className={css.cancelButton}>
-      Cancel
-    </button>
-    <button
-      type="submit"
-      className={css.submitButton}
-      disabled=false
-    >
-      Create note
-    </button>
-  </div>
-</form>
-
-*/
