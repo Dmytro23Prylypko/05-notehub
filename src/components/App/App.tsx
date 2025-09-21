@@ -21,10 +21,8 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [searchValue] = useDebounce(searchQuery, 500);
 
-  const queryKey = ["notes", currentPage, searchValue];
-
   const { data, isLoading, isError } = useQuery({
-    queryKey: queryKey,
+    queryKey: ["notes", currentPage, searchValue],
     queryFn: () => fetchNotes(currentPage, searchValue),
     placeholderData: keepPreviousData,
   });
@@ -36,13 +34,15 @@ function App() {
     setCurrentPage(1);
   };
 
+  const onPageChange = (page: number) => setCurrentPage(page);
+
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
         <SearchBox onSearch={onSearch} />
-        {data && data?.totalPages < 1 && <Pagination
+        {data && data?.totalPages > 1 && <Pagination
           currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
+          onPageChange={onPageChange}
           pageCount={data?.totalPages ?? 0}
         />}
         <button className={css.button} onClick={() => setIsOpen(true)}>
@@ -50,13 +50,13 @@ function App() {
         </button>
         {isOpen && (
           <Modal onClose={onClose}>
-            <NoteForm onClose={onClose} queryKey={queryKey} />
+            <NoteForm onClose={onClose} />
           </Modal>
         )}
       </header>
       {isError && <Error />}
       {data && data?.notes.length > 0 ? (
-        <NoteList notes={data?.notes} queryKey={queryKey}/>
+        <NoteList notes={data?.notes} />
       ) : data && (
         <NotFound />
       )}

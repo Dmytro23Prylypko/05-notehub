@@ -5,17 +5,17 @@ import { deleteNote } from "../../services/noteService";
 
 interface NoteListProps {
   notes: Note[];
-  queryKey: (string | number | undefined)[];
+  // queryKey: (string | number | undefined)[];
 }
 
-function NoteList({ notes, queryKey }: NoteListProps) {
+function NoteList({ notes }: NoteListProps) {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
     mutationFn: (noteId: string) => deleteNote(noteId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKey,
+        queryKey: ["notes"],
       });
     },
   });

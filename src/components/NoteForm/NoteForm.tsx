@@ -28,10 +28,9 @@ const validationSchema = Yup.object().shape({
 
 interface NoteFormProps {
   onClose: () => void;
-  queryKey: (string | number | undefined)[];
 }
 
-function NoteForm({onClose, queryKey}: NoteFormProps) {
+function NoteForm({onClose}: NoteFormProps) {
   const formId = useId();
 
   const queryClient = useQueryClient();
@@ -40,7 +39,7 @@ function NoteForm({onClose, queryKey}: NoteFormProps) {
     mutationFn: (payload: DefaultValues) => createNote(payload.title, payload.content, payload.tag),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKey,
+        queryKey: ["notes"],
       });
       onClose();
     },

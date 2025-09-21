@@ -4,13 +4,13 @@ import ReactPaginate from "react-paginate";
 interface PaginationProps {
   pageCount: number;
   currentPage: number;
-  setCurrentPage: (page: number) => void;
+  onPageChange: (page: number) => void;
 }
 
 function Pagination({
   pageCount,
   currentPage,
-  setCurrentPage,
+  onPageChange,
 }: PaginationProps) {
   const maxPageIndex = Math.max(pageCount - 1, 0);
   const safeForcePage = Math.min(Math.max(currentPage - 1, 0), maxPageIndex);
@@ -19,7 +19,7 @@ function Pagination({
     <ReactPaginate
       breakLabel="..."
       nextLabel="→"
-      onPageChange={({ selected }) => setCurrentPage(selected + 1)}
+      onPageChange={({ selected }) => onPageChange(selected + 1)}
       forcePage={safeForcePage}
       pageRangeDisplayed={5}
       pageCount={pageCount}
